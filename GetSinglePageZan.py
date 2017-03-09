@@ -1,6 +1,8 @@
 import urllib.request
 from bs4 import BeautifulSoup
 import sys
+import re
+import pymysql
 
 class SingelePageSpider:
     def __init__(self):
@@ -18,27 +20,41 @@ class SingelePageSpider:
         return soup
 
     def getcontent(soup):
+        list = []
+
         question= soup.find_all('div', {'class': 'question fmt'})
         #question为获取到问题的题目
         for i in question:
             content = i.find_all('p')
             print("问题内容是         :         "+content[0].string)
+            questionContent = content[0].string
         #获取到问题的数量
         answerCount = soup.find('h2',{'id':'answers-title'})
         print(answerCount.text)
         answers = [answerCount]
         #获取到包含所有回答的Set
         answerall = soup.find_all('div',{'class':'answer fmt'})
-        for anscount,answer in enumerate(answerall):
-            #加入到answer的集合众
-           if answer not in answers:
-               print("这是第  %s"%anscount+"   条答案")
-               answers.append(answerall)
-               #获取到所有的p标签的内容
-               answercontent = answer.find_all('p')
-               for i,con in enumerate(answercontent):
-                    print(con.text)
+        list.append(questionContent)
+        list.append(answerall)
+        return list
+    def connectmysql(urlid,list):
+        conn = pymysql.connect(host='127.0.0.1',port=3306,user="root",passwd="616675",db='py')
+        cur = conn.cursor()
+        question = list[0]
+        answer = list[1]
+        sql="insert into answer(AnsId,Question,AnswerContent) VALUES("+urlid+","+question+","+answer+")"
+        print(sql)
+        cur.execute(sql)
+        rows = cur.fetchall()
+        print(rows)
 
     if __name__ == '__main__':
          soup = geturl("https://segmentfault.com/q/1010000000170658")
-         getcontent(soup)
+         url = r"https://segmentfault.com/q/1010000000170658"
+         patten = r"\d\d*"
+         parrern = re.compile(patten)
+         urlid = parrern.findall(url)
+         print(urlid[0])
+         list = getcontent(soup)
+         print(len(list))
+         connectmysql(urlid,list)
