@@ -41,8 +41,8 @@ class SingelePageSpider:
         conn = pymysql.connect(host='127.0.0.1',port=3306,user="root",passwd="616675",db='py')
         cur = conn.cursor()
         question = list[0]
-        answer = list[1]
-        sql="insert into answer(AnsId,Question,AnswerContent) VALUES("+urlid+","+question+","+answer+")"
+
+        sql="insert into answer(AnsId,Question,AnswerContent) VALUES("+urlid+","+question+","+")"
         print(sql)
         cur.execute(sql)
         rows = cur.fetchall()
