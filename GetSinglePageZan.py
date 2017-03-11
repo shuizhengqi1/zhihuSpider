@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import sys
 import re
 import pymysql
+from MysqlConn import GetMysqlDb
 
 class SingelePageSpider:
     def __init__(self):
@@ -26,27 +27,20 @@ class SingelePageSpider:
         #question为获取到问题的题目
         for i in question:
             content = i.find_all('p')
-            print("问题内容是         :         "+content[0].string)
             questionContent = content[0].string
         #获取到问题的数量
         answerCount = soup.find('h2',{'id':'answers-title'})
-        print(answerCount.text)
-        answers = [answerCount]
+        pattern = re.compile('\d+')
+        answerCountRe = pattern.findall(answerCount.text)
         #获取到包含所有回答的Set
         answerall = soup.find_all('div',{'class':'answer fmt'})
         list.append(questionContent)
+        list.append(answerCountRe[0])
         list.append(answerall)
         return list
-    def connectmysql(urlid,list):
-        conn = pymysql.connect(host='127.0.0.1',port=3306,user="root",passwd="616675",db='py')
-        cur = conn.cursor()
-        question = list[0]
+    def connectmysql(urlid,question,answercount):
+        print("s")
 
-        sql="insert into answer(AnsId,Question,AnswerContent) VALUES("+urlid+","+question+","+")"
-        print(sql)
-        cur.execute(sql)
-        rows = cur.fetchall()
-        print(rows)
 
     if __name__ == '__main__':
          soup = geturl("https://segmentfault.com/q/1010000000170658")
@@ -54,7 +48,14 @@ class SingelePageSpider:
          patten = r"\d\d*"
          parrern = re.compile(patten)
          urlid = parrern.findall(url)
-         print(urlid[0])
+         print("问题的id是"+urlid[0])
          list = getcontent(soup)
-         print(len(list))
-         connectmysql(urlid,list)
+         question = list[0]
+         print("问题的题目是"+question)
+         answercount = list[1]
+         print("答案的数量是  "+answercount)
+         GetMysqlDb.InsertQuestion('py.question', urlid[0], question, answercount)
+         listOfAnswer = list[2]
+         for i,answer in enumerate(listOfAnswer):
+             answerid = urlid[0]+str(i)
+             GetMysqlDb.InserAnswer('py.answer',answerid,answer.text)
